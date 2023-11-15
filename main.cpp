@@ -122,9 +122,8 @@ void drawOrbit(const Planet& planet, const Uniforms& uniforms) {
     glm::vec2 screenPos = glm::vec2((planetPosition.x / planetPosition.w + 1.0f) * 0.5f * SCREEN_WIDTH,
                                     (1.0f - planetPosition.y / planetPosition.w) * 0.5f * SCREEN_HEIGHT);
 
-    static std::vector<glm::vec2> points;  // Lista de puntos en el borde
-
-    // Almacenar solo el punto inicial en el borde
+    static std::vector<glm::vec2> points;
+    
     if (points.size() == 0) {
         points.push_back(screenPos);
     }
@@ -260,7 +259,7 @@ int main(int argc, char* argv[]) {
         uniforms.view = glm::lookAt(
                 camera.cameraPosition,
                 camera.targetPosition,
-                glm::vec3(0.0f, 1.0f, 0.0f)  // Up vector changed to positive y-axis
+                glm::vec3(0.0f, 1.0f, 0.0f)
         );
 
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
@@ -288,10 +287,10 @@ int main(int argc, char* argv[]) {
             float orbitX = Radius * cos(Angulo_P);
             float orbitY = Radius * sin(Angulo_P);
             glm::mat4 translate = glm::translate(glm::mat4(1.0f), systemOffset);
-            glm::mat4 rotation = glm::rotate(glm::mat4(1.0f), glm::radians(planet.Angulo_P), glm::vec3(0.0f, 1.0f, 0.0f));  // Rotación en sentido horario alrededor del eje y
-            glm::mat4 translation = glm::translate(glm::mat4(1.0f), glm::vec3(orbitX, 0.0f, orbitY));  // Cambié la posición para evitar el giro adicional en z
+            glm::mat4 rotation = glm::rotate(glm::mat4(1.0f), glm::radians(planet.Angulo_P), glm::vec3(0.0f, 1.0f, 0.0f));
+            glm::mat4 translation = glm::translate(glm::mat4(1.0f), glm::vec3(orbitX, 0.0f, orbitY));
             glm::mat4 scale = glm::scale(glm::mat4(1.0f), glm::vec3(planet.escala_F));
-            glm::mat4 model = translate * rotation * translation * scale;  // Cambié el orden para evitar un giro adicional
+            glm::mat4 model = translate * rotation * translation * scale;
 
             uniforms.model = model;
 
@@ -306,7 +305,7 @@ int main(int argc, char* argv[]) {
         frameTime = SDL_GetTicks() - frameStart;
         if (frameTime > 0) {
             std::ostringstream titleStream;
-            titleStream << "FPS: " << 1000.0 / frameTime;  // Milliseconds to seconds
+            titleStream << "FPS: " << 1000.0 / frameTime;
             SDL_SetWindowTitle(window, titleStream.str().c_str());
         }
         SDL_Delay(16);
