@@ -353,7 +353,6 @@ Fragment fragmentShaderSun(Fragment& fragment) {
 
 
 Fragment fragmentShader(Fragment& fragment) {
-
     Color color;
 
     glm::vec3 brightColor = glm::vec3(1.0f, 0.6f, 0.0f);
@@ -371,13 +370,10 @@ Fragment fragmentShader(Fragment& fragment) {
     );
 
     FastNoiseLite noiseGenerator;
-
-
     noiseGenerator.SetNoiseType(FastNoiseLite::NoiseType_Cellular);
     noiseGenerator.SetFrequency(0.02 + (10 - abs((static_cast<int>(frame/10.0f) % (2 * 10)) - 10))/2000.0f);
 
     float zoom = 1000.0f;
-
 
     float lat = uv.y;  // Latitude
     float lon = uv.x;  // Longitude
@@ -394,10 +390,12 @@ Fragment fragmentShader(Fragment& fragment) {
     float edgeFactor = edgeFactorX * edgeFactorY;
     float alpha = 1.0f - glm::mix(1.0f, 0.0f, edgeFactor);  // Alpha is 1 at the poles and 0 at the equator
 
+    // Adjust the alpha value based on the noiseValue
+    alpha *= 1.0f - noiseValue;
+
     glm::vec3 tmpColor = mix(brightColor, darkColor, noiseValue);
 
     color = Color(tmpColor.x, tmpColor.y, tmpColor.z, alpha);
-
 
     fragment.color = color * fragment.intensity;
 

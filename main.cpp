@@ -14,6 +14,7 @@
 #include "camera.h"
 #include "ObjLoader.h"
 #include "noise.h"
+#include <unordered_map>
 
 
 SDL_Window* window = nullptr;
@@ -103,32 +104,62 @@ struct Planet {
     float Angulo_P;
 };
 
-// Function to draw a circle representing the orbit
-void drawOrbit(float radius, const Uniforms& uniforms) {
 
+struct PlanetOrbit {
+    glm::vec2 lastPoint;
+    std::vector<glm::vec2> points;
+};
+
+
+void drawOrbit(const Planet& planet, const Uniforms& uniforms) {
     const int numSegments = 100;
-    SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
+
+    // Color de órbita
+    Fragment frag;
+    frag.color = Color(1.0f, 1.0f, 1.0f);
 
     glm::vec4 planetPosition = uniforms.projection * uniforms.view * glm::vec4(glm::vec3(uniforms.model[3]), 1.0f);
     glm::vec2 screenPos = glm::vec2((planetPosition.x / planetPosition.w + 1.0f) * 0.5f * SCREEN_WIDTH,
                                     (1.0f - planetPosition.y / planetPosition.w) * 0.5f * SCREEN_HEIGHT);
 
-    float prevX = 0.0f;
-    float prevY = 0.0f;
+    static std::vector<glm::vec2> points;  // Lista de puntos en el borde
+
+    // Almacenar solo el punto inicial en el borde
+    if (points.size() == 0) {
+        points.push_back(screenPos);
+    }
+
     for (int i = 0; i <= numSegments; ++i) {
-        float theta = static_cast<float>(i) / numSegments * glm::two_pi<float>();
-        float x = screenPos.x + radius * cos(theta);
-        float y = screenPos.y + radius * sin(theta);
-        if (i > 0) {
-            SDL_RenderDrawLine(renderer, prevX, prevY, x, y);
+        float theta = planet.Angulo_P - static_cast<float>(i) / numSegments * glm::two_pi<float>();
+        float x = screenPos.x + planet.Radius * cos(theta);
+        float y = screenPos.y - planet.Radius * sin(theta);
+
+        if (points.size() > 0) {
+            points.push_back(glm::vec2(x, y));
         }
-        int x1 = (int)prevX;
-        int y1 = (int)prevY;
-        int x2 = (int)x;
-        int y2 = (int)y;
-        SDL_RenderDrawLine(renderer, x1, y1, x2, y2);
+    }
+
+    // Dibujar líneas entre puntos, excluyendo el primer punto
+    for (int i = 0; i < points.size() - 1; i++) {
+        glm::vec3 p1(points[i].x, points[i].y, 0);
+        glm::vec3 p2(points[i + 1].x, points[i + 1].y, 0);
+
+        std::vector<Fragment> fragments = line(p1, p2);
+
+        // Dibujar fragments
+        for (Fragment f : fragments) {
+            // Asignar color blanco
+            f.color = frag.color;
+            point(f);
+        }
+    }
+
+    if (points.size() > 1000) {
+        points.erase(points.begin(), points.begin() + points.size() - 1000);
     }
 }
+
+
 
 std::vector<Planet> planets;
 int currentPlanet = 0;
@@ -229,11 +260,10 @@ int main(int argc, char* argv[]) {
         uniforms.view = glm::lookAt(
                 camera.cameraPosition,
                 camera.targetPosition,
-                camera.upVector
+                glm::vec3(0.0f, 1.0f, 0.0f)  // Up vector changed to positive y-axis
         );
 
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-        SDL_RenderClear(renderer);
         clearFramebuffer();
         int numStars = rand() % 500;
         for(int i = 0; i < numStars; i++) {
@@ -249,6 +279,7 @@ int main(int argc, char* argv[]) {
             point(star);
         }
 
+
         for (auto& planet : planets) {
             uniforms.objectType = planet.type;
             glm::vec3 systemOffset(-0.1f, 0.0f, 0.0f);
@@ -257,17 +288,17 @@ int main(int argc, char* argv[]) {
             float orbitX = Radius * cos(Angulo_P);
             float orbitY = Radius * sin(Angulo_P);
             glm::mat4 translate = glm::translate(glm::mat4(1.0f), systemOffset);
-            glm::mat4 rotation = glm::rotate(glm::mat4(1.0f), glm::radians(planet.Angulo_P), glm::vec3(0.0f, 1.0f, 0.0f));
-            glm::mat4 translation = glm::translate(glm::mat4(1.0f), glm::vec3(orbitX, orbitY, 0));
+            glm::mat4 rotation = glm::rotate(glm::mat4(1.0f), glm::radians(planet.Angulo_P), glm::vec3(0.0f, 1.0f, 0.0f));  // Rotación en sentido horario alrededor del eje y
+            glm::mat4 translation = glm::translate(glm::mat4(1.0f), glm::vec3(orbitX, 0.0f, orbitY));  // Cambié la posición para evitar el giro adicional en z
             glm::mat4 scale = glm::scale(glm::mat4(1.0f), glm::vec3(planet.escala_F));
-            glm::mat4 model = translate * translation * rotation * scale;
+            glm::mat4 model = translate * rotation * translation * scale;  // Cambié el orden para evitar un giro adicional
 
             uniforms.model = model;
 
+            drawOrbit(planet, uniforms);
 
             render(vertexBufferObject, uniforms);
             planet.Angulo_P += planet.Velocidad__ * fixedDeltaTime;
-            drawOrbit(planet.Radius, uniforms);
         }
 
         renderBuffer(renderer);
