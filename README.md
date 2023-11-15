@@ -18,6 +18,5 @@ Video de prueba completa: https://youtu.be/0cNs3rUXlHs
 
 
 
-Preview:
 ![](https://github.com/ManuelR11/Proyecto_SpaceTravel_Graficas_C/blob/358d02a9db64edec05cb9c97ab26c55f62303f7f/Espacio.JPG)
 
